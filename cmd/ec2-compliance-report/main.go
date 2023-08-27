@@ -7,6 +7,7 @@ import (
 	"github.com/rodaine/table"
 	"log"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -16,17 +17,51 @@ func main() {
 		log.Fatal(err)
 	}
 	instanceIds := instances.Instances(cfg)
-	tbl := table.New("Instance ID", "Name", "CreationDate", "Profile").WithHeaderFormatter(func(format string, vals ...interface{}) string {
+	tbl := table.New(
+		"Instance ID",
+		"Name",
+		"CreationDate",
+		"Profile",
+		"Owner",
+		"Compliance Ticket",
+	).WithHeaderFormatter(func(format string, vals ...interface{}) string {
 		return ""
 	})
-	//	tbl := table.New("", "", "", "")
+	var instanceAge map[string][]string = make(map[string][]string)
 	for _, instanceId := range instanceIds {
-		tbl.AddRow(instanceId,
-			instances.InstanceName(cfg, instanceId),
-			instances.InstanceDate(cfg, instanceId).Format(time.RFC3339),
-			os.Getenv("AWS_VAULT"),
-		)
+		var date = instances.InstanceDate(cfg, instanceId).String()
+		if instanceAge[date] == nil {
+			a := []string{instanceId}
+			instanceAge[date] = a
+		} else {
+			instanceAge[date] = append(instanceAge[date], instanceId)
+		}
+	}
+	keys := make([]string, 0, len(instanceAge))
+	for k := range instanceAge {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 
+	for _, k := range keys {
+		for _, instanceId := range instanceAge[k] {
+			var owner string
+			var compliance_ticket string
+			for _, tag := range instances.GetInstance(cfg, instanceId).Tags {
+				if *tag.Key == "owner" {
+					owner = *tag.Value
+				} else if *tag.Key == "compliance_ticket" {
+					compliance_ticket = *tag.Value
+				}
+			}
+			tbl.AddRow(instanceId,
+				instances.InstanceName(cfg, instanceId),
+				instances.InstanceDate(cfg, instanceId).Format(time.RFC3339),
+				os.Getenv("AWS_VAULT"),
+				owner,
+				compliance_ticket,
+			)
+		}
 	}
 	tbl.Print()
 }

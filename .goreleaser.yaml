@@ -13,8 +13,10 @@ builds:
     goarch:
       - amd64
       - arm64
+      - arm
     goos:
       - darwin
+      - linux
     main: ./cmd/ec2-compliance-report
     binary: ec2-compliance-report
     flags:
@@ -23,12 +25,6 @@ builds:
       - -w -s
 archives:
   - format: tar.gz
-    name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
 release:
   github:
     owner: cwimmer
@@ -44,16 +40,20 @@ changelog:
       - '^docs:'
       - '^test:'
 report_sizes: true
-brews:
-  - name: myproject
-    ids:
-      - ec2-compliance-report
-    repository:
-      owner: cwimmer
-      name: go-scripts
-      branch: main
-    install: |
-      bin.install "ec2-compliance-report"
+# brews:
+#   - name: go-scripts
+#     homepage: https://github.com/cwimmer/go-scripts/
+#     ids:
+#       - ec2-compliance-report
+#     repository:
+#       owner: cwimmer
+#       name: hoebrew-tools
+#       branch: main
+#     commit_author:
+#       name: Charles Wimmer
+#       email: charles@wimmer.net
+    # install: |
+    #   bin.install "ec2-compliance-report"
 # The lines beneath this are called `modelines`. See `:help modeline`
 # Feel free to remove those if you don't want/use them.
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
